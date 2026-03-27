@@ -90,6 +90,84 @@
             box-shadow: 0 20px 60px rgba(20, 184, 166, 0.3);
         }
 
+        /* NEW: FLOATING SHAPES IN HERO */
+        .floating-shapes {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .floating-shape {
+            position: absolute;
+            font-size: 4rem;
+            opacity: 0.08;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(50px, -80px) rotate(90deg); }
+            50% { transform: translate(-30px, 60px) rotate(180deg); }
+            75% { transform: translate(70px, -40px) rotate(270deg); }
+        }
+
+        /* NEW: ORBITING ICONS */
+        .orbit-container {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .orbit-icon {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: counterRotate 30s linear infinite, pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes counterRotate {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        @keyframes pulse {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: 0 5px 20px rgba(20, 184, 166, 0.3); 
+            }
+            50% { 
+                transform: scale(1.1); 
+                box-shadow: 0 8px 30px rgba(20, 184, 166, 0.5); 
+            }
+        }
+
+        .orbit-icon:nth-child(1) { top: 0; left: 50%; transform: translateX(-50%); }
+        .orbit-icon:nth-child(2) { right: 0; top: 50%; transform: translateY(-50%); }
+        .orbit-icon:nth-child(3) { bottom: 0; left: 50%; transform: translateX(-50%); }
+        .orbit-icon:nth-child(4) { left: 0; top: 50%; transform: translateY(-50%); }
+
+        .light-mode .orbit-icon {
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+        }
+
+        .dark-mode .orbit-icon {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(20, 184, 166, 0.3);
+        }
+
         .project-card {
             position: relative;
             border: 2px solid rgba(255, 255, 255, 0.1);
@@ -770,6 +848,12 @@
             .terminal-line {
                 font-size: 8px;
             }
+            .orbit-container {
+                display: none;
+            }
+            .floating-shapes {
+                display: none;
+            }
         }
 
         ::-webkit-scrollbar {
@@ -887,19 +971,6 @@
                     const scrollTotal = document.documentElement.scrollHeight - window.innerHeight;
                     const progress = (window.scrollY / scrollTotal) * 100;
                     setScrollProgress(progress);
-
-                    const reveals = document.querySelectorAll('.reveal');
-                    reveals.forEach(element => {
-                        const windowHeight = window.innerHeight;
-                        const elementTop = element.getBoundingClientRect().top;
-                        const elementBottom = element.getBoundingClientRect().bottom;
-                        
-                        if (elementTop < windowHeight - 100 && elementBottom > 100) {
-                            element.classList.add('active');
-                        } else {
-                            element.classList.remove('active');
-                        }
-                    });
                 };
 
                 window.addEventListener('scroll', handleScroll);
@@ -917,81 +988,112 @@
                 return () => window.removeEventListener('keydown', handleEscape);
             }, [selectedProject]);
 
+            // Lazy loading with Intersection Observer for performance
+            useEffect(() => {
+                const observerOptions = {
+                    root: null,
+                    rootMargin: '50px',
+                    threshold: 0.1
+                };
+
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('active');
+                        }
+                    });
+                }, observerOptions);
+
+                // Observe all reveal elements
+                const reveals = document.querySelectorAll('.reveal');
+                reveals.forEach(element => observer.observe(element));
+
+                return () => {
+                    reveals.forEach(element => observer.unobserve(element));
+                };
+            }, []);
+
             const projects = [
                 {
                     id: 1,
-                    title: "Heuristic Based Malware Detection",
-                    description: "Built a Python-based system implementing custom-designed grammars and Grammatical Evolution (GE) to model malware behavior. Achieved higher adaptability and detection accuracy against evolving malware threats.",
-                    tech: ["Python", "Machine Learning", "Grammatical Evolution", "Security"],
+                    title: "Multimodal Tool Wear Prediction (Minape)",
+                    description: "Implemented Minape architecture in PyTorch to process 9 modalities for industrial wear detection. Achieved 91% classification accuracy and 40.9 µm MAE on Nonastreda dataset using 10-fold cross-validation.",
+                    tech: ["PyTorch", "Transformers", "Patch Embedding", "Multi-head Attention", "TempMixer"],
+                    github: "https://github.com/tejaswinibk910/multimodal-isotropic-model",
                     details: {
-                        overview: "Developed an adaptive malware detection system that uses evolutionary computation to identify malicious patterns without relying on signature-based detection.",
+                        overview: "Developed Minape (Multimodal Isotropic Neural Architecture with Patch Embedding) to process 9 modalities: chip/tool/workpiece images and force scalograms/spectrograms. Designed patch embedding layers, isotropic transformer with multi-head self-attention, and TempMixer fusion module with sample-adaptive importance weights.",
                         achievements: [
-                            "Achieved higher detection accuracy against evolving malware compared to traditional signature-based methods",
-                            "Implemented custom context-free grammars to model malware behavior patterns",
-                            "Reduced false positive rate through adaptive learning"
+                            "Achieved 91% classification accuracy and 40.9 µm MAE on Nonastreda dataset",
+                            "Established first benchmark on this newly published dataset with multi-task learning",
+                            "Implemented 10-fold tool-based cross-validation for cross-domain generalization",
+                            "Designed sample-adaptive importance weights for TempMixer fusion module"
                         ],
-                        period: "Sep 2023 - May 2024",
-                        role: "Final Year Project"
+                        period: "Graduate Research",
+                        role: "Research Project"
                     }
                 },
                 {
                     id: 2,
-                    title: "Smart Attendance System",
-                    description: "Built a web & mobile app using MERN stack with face recognition and Wi-Fi geofencing for automated attendance. Reduced manual effort by ~75% with integrated Amazon SNS notifications.",
-                    tech: ["MongoDB", "Express", "React", "Node.js", "CV", "AWS SNS"],
+                    title: "Multi-Stage Movie Recommendation System",
+                    description: "Built recommendation engine combining FAISS retrieval, SASRec Transformer, and MMR re-ranking on MovieLens-25M. Achieved 467% CTR improvement with HR@10 7.0% and NDCG@10 3.8%.",
+                    tech: ["FAISS", "PyTorch", "SASRec", "ResNet50", "SentenceTransformers", "MMR"],
+                    github: "https://github.com/tejaswinibk910/multimodal-recsys",
                     details: {
-                        overview: "A comprehensive attendance management system combining computer vision and geofencing to automate attendance tracking for educational institutions.",
+                        overview: "Developed production-style recommendation engine on MovieLens-25M dataset (25M ratings, 162K movies). Multi-stage pipeline: FAISS HNSW indexing on 512D multimodal embeddings → 2-layer SASRec Transformer (4 attention heads, 2.1M parameters) → maximal marginal relevance re-ranking.",
                         achievements: [
-                            "Reduced manual attendance effort by approximately 75%",
-                            "Integrated Amazon SNS for real-time attendance notifications",
-                            "Implemented Wi-Fi geofencing to ensure on-campus attendance",
-                            "Built interactive dashboards for faculty and students to track attendance patterns"
+                            "Achieved 359% improvement over retrieval-only baseline",
+                            "Demonstrated 467% CTR improvement through A/B testing simulation",
+                            "Statistical significance with p < 0.0001",
+                            "Combined ResNet50 for images and SentenceTransformers for text embeddings"
                         ],
-                        period: "Mar 2023 - Jun 2023",
-                        role: "Academic Project"
+                        period: "2024",
+                        role: "Course Project"
                     }
                 },
                 {
                     id: 3,
-                    title: "Minape: Multimodal Tool Wear Prediction",
-                    description: "Transformer-based architecture using patch embedding for 5-sensor fusion. Two-stage approach: isotropic layers for intra-modal processing, TempMixer for cross-modal attention across images, scalograms, and spectrograms.",
-                    tech: ["PyTorch", "Transformers", "Patch Embedding", "Multimodal AI", "Self-Attention", "Computer Vision"],
+                    title: "Research Paper Mentor – AI-Powered Academic Assistant",
+                    description: "Built AI learning platform using FastAPI, Next.js, and TypeScript transforming research PDFs into interactive experiences. Implemented RAG with ChromaDB, 4 tutoring modes, and SM-2 spaced repetition.",
+                    tech: ["FastAPI", "Next.js", "TypeScript", "ChromaDB", "RAG", "Groq", "Anthropic"],
+                    github: "https://github.com/tejaswinibk910/research-paper-mentor",
                     details: {
-                        overview: "Extended the Minape architecture for the Nonastreda multimodal dataset, implementing a sophisticated two-stage transformer system for tool wear prediction using multiple sensor modalities.",
+                        overview: "AI-powered learning platform that transforms research PDFs into interactive experiences with Socratic tutoring, adaptive quizzes, and knowledge graphs. Implemented RAG with ChromaDB vector store and sentence-transformers embeddings, integrated Groq/Anthropic LLMs for chat and Ollama for concept extraction.",
                         achievements: [
-                            "Processed 5 different sensor modalities: chip images, tool images, work images, scalograms, and spectrograms",
-                            "Implemented isotropic transformer layers for intra-modal feature extraction",
-                            "Developed TempMixer module for effective cross-modal fusion using self-attention",
-                            "Applied patch embedding techniques to tokenize image data for transformer processing"
+                            "Developed 4 tutoring modes: Socratic, Direct, Hint-based, and Analogy",
+                            "Implemented SM-2 spaced repetition algorithm for optimized learning",
+                            "Built interactive concept graph visualization with semantic chunking",
+                            "JWT-based authentication with secure session management"
                         ],
-                        period: "Current Research",
-                        role: "Graduate Research Project"
+                        period: "2024",
+                        role: "Personal Project"
                     }
                 },
                 {
                     id: 4,
-                    title: "Book Recommendation System",
-                    description: "Developed a Java-based application using collaborative filtering, content-based filtering, and matrix factorization algorithms. Recommended nearest libraries and personalized book suggestions.",
-                    tech: ["Java", "Machine Learning", "Recommendation Systems", "Algorithms"],
+                    title: "Real-Time Distributed Ticketing Platform",
+                    description: "Engineered microservices-based ticket booking system with Redis distributed locking. Achieved zero double-bookings across 10+ concurrent users with 151ms average response time and 96% query optimization.",
+                    tech: ["FastAPI", "PostgreSQL", "Redis", "Docker", "WebSocket"],
+                    github: "https://github.com/tejaswinibk910/concurrent-booking-microservices",
                     details: {
-                        overview: "A personalized book recommendation system that combines multiple recommendation techniques with location-based library suggestions.",
+                        overview: "Built production-grade distributed ticketing platform with Redis distributed locking using atomic SETNX operations. Containerized 3 microservices with Docker Compose, achieving zero double-bookings and sub-50ms WebSocket latency managing 43,000+ seat inventory.",
                         achievements: [
-                            "Implemented collaborative filtering using user-item interaction matrix",
-                            "Applied content-based filtering using book metadata and features",
-                            "Used matrix factorization (SVD) for dimensionality reduction and prediction",
-                            "Integrated location services to recommend nearest libraries with book availability"
+                            "Zero double-bookings across 10+ concurrent users",
+                            "151ms average response time under high concurrency",
+                            "Optimized database queries by 96% (2.5s → 83ms) through composite indexing",
+                            "Real-time WebSocket synchronization with sub-50ms latency",
+                            "N+1 query elimination for improved scalability"
                         ],
-                        period: "Oct 2022 - Jan 2023",
+                        period: "2024",
                         role: "Course Project"
                     }
                 }
             ];
 
             const skillCategories = {
-                "Programming Languages": ["Python", "C", "C++", "Java", "HTML", "CSS", "JavaScript", "Golang"],
-                "Databases & Tools": ["PostgreSQL", "MongoDB", "CockroachDB", "Git", "JIRA", "Power BI"],
-                "Frameworks & Libraries": ["Pandas", "PyTorch", "Sklearn", "Numpy", "TensorFlow", "React", "Node.js", "REST API"],
-                "Automation & Analytics": ["Blue Prism", "Power Automate", "Excel", "Power BI", "Data Analysis"]
+                "Languages": ["Python", "C", "C++", "C#", "Java", "JavaScript", "TypeScript", "Golang", "Bash", "HTML/CSS"],
+                "ML/AI Frameworks": ["PyTorch", "TensorFlow", "CUDA", "Scipy", "Obspy", "Scikit-learn", "FAISS", "Pandas", "NumPy", "MPI"],
+                "Databases & Backend": ["PostgreSQL", "MongoDB", "Redis", "AWS S3", "Node.js", "Express.js", "FastAPI", "REST API"],
+                "Tools & Platforms": ["Git", "Docker", "AWS", "SLURM", ".NET", "React", "Next.js", "WebSocket", "Power BI", "Blue Prism"]
             };
 
             const techStack = [
@@ -1011,32 +1113,26 @@
 
             const workExperience = [
                 {
-                    role: "Associate Software Engineer",
-                    company: "BNP Paribas ISPL",
-                    period: "Jul 2024 - Aug 2025",
-                    description: "Developed and maintained robotic process automations using Blue Prism and Power Automate, reducing manual effort by 70%. Designed data analysis dashboards in Excel and Power BI. Led major platform upgrade migrating ~200 bots while ensuring 100% business continuity.",
-                    technologies: ["Blue Prism", "Power Automate", "Python", "Excel", "Power BI", "JIRA"]
+                    role: "Research Assistant",
+                    company: "University of Rochester - Earth Imaging Lab",
+                    period: "Dec 2025 - Present",
+                    description: "Designed and optimized distributed data processing pipeline using MPI-parallelized Python on SLURM HPC cluster, reducing runtime from 5 hours to under 3 minutes (100x+ speedup). Building scalable AWS cloud infrastructure for petabyte-scale seismic data processing. Architected end-to-end ML training infrastructure with GPU kernel optimization and automated dataset versioning.",
+                    technologies: ["Python", "MPI", "SLURM", "AWS", "Docker", "PyTorch", "CUDA", "S3", "boto3"]
                 },
                 {
-                    role: "Software Engineering Intern",
-                    company: "BNP Paribas ISPL",
-                    period: "Jan 2024 - Jul 2024",
-                    description: "Developed web applications using .NET frameworks and C#. Designed interactive dashboards and reports in Excel and Power BI. Built and deployed a Python-based chatbot to automate IT ticket creation across multiple categories.",
-                    technologies: [".NET", "C#", "Python", "Excel", "Power BI"]
+                    role: "Research Assistant",
+                    company: "University of Rochester Medical Center",
+                    period: "Jan 2026 - Present",
+                    description: "Developing hybrid spatiotemporal deep learning model for arrhythmia detection in firefighters using single-lead ECG signals. Co-author on paper under review in Expert Systems with Applications. Collaborating with NIST and URMC School of Nursing on ECG data analysis and ISHNE file validation for real-time cardiac risk mitigation.",
+                    technologies: ["PyTorch", "Deep Learning", "CNN-LSTM", "Signal Processing", "ECG Analysis"]
                 },
                 {
-                    role: "Intern",
-                    company: "L&T PMSC",
-                    period: "Jul 2023 - Aug 2023",
-                    description: "Built a production monitoring web application using the PERN stack to track shop floor processes and manage dependencies. Developed interactive Power BI dashboards to visualize key performance metrics from large-scale data sources.",
-                    technologies: ["PostgreSQL", "Express.js", "React", "Node.js", "Power BI"]
+                    role: "Software Engineer",
+                    company: "BNP Paribas ISPL",
+                    period: "Jan 2024 - Aug 2025 (Associate: Jul 2024 - Aug 2025 | Intern: Jan 2024 - Jul 2024)",
+                    description: "Developed and maintained robotic process automations using Blue Prism and Power Automate, reducing manual effort by 70%. Led platform upgrade and migration of ~200 bots with comprehensive regression testing that reduced downtime from weeks to hours. Built Python chatbot to automate IT ticket creation and designed interactive Power BI dashboards.",
+                    technologies: ["Blue Prism", "Power Automate", "Python", ".NET", "C#", "Power BI", "JIRA"]
                 }
-            ];
-
-            const certifications = [
-                { name: "Blue Prism Developer", org: "Blue Prism", icon: "fa-robot" },
-                { name: "AWS Cloud Practitioner", org: "Amazon Web Services", icon: "fa-cloud" },
-                { name: "Agile Practitioner", org: "Professional Training", icon: "fa-tasks" }
             ];
 
             return (
@@ -1066,10 +1162,10 @@
                                     Tejaswini BK
                                 </div>
                                 <div className="hidden md:flex items-center space-x-8">
-                                    {['Work', 'Skills', 'Certs', 'Approach', 'Contact'].map((item) => (
+                                    {['Experience', 'Education', 'Projects', 'Skills', 'Resume', 'Contact'].map((item) => (
                                         <a 
                                             key={item}
-                                            href={`#${item.toLowerCase().replace(' ', '-')}`} 
+                                            href={item === 'Resume' ? 'resume.html' : `#${item.toLowerCase().replace(' ', '-')}`} 
                                             className="nav-link text-base font-semibold"
                                         >
                                             {item}
@@ -1089,14 +1185,33 @@
                         </div>
                     </nav>
 
+                    {/* HERO SECTION WITH ENHANCEMENTS */}
                     <section className="min-h-screen flex items-center justify-center px-6 pt-20 relative overflow-hidden">
                         <div className="hero-background"></div>
                         <div className="hero-gradient-overlay"></div>
 
+                        {/* NEW: Floating 3D Shapes */}
+                        <div className="floating-shapes">
+                            {[...Array(8)].map((_, i) => (
+                                <div
+                                    key={`shape-${i}`}
+                                    className="floating-shape"
+                                    style={{
+                                        left: `${10 + (i * 12)}%`,
+                                        top: `${20 + (i * 8)}%`,
+                                        animationDelay: `${i * 0.5}s`,
+                                        animationDuration: `${15 + (i % 3) * 5}s`
+                                    }}
+                                >
+                                    {i % 3 === 0 ? '○' : i % 3 === 1 ? '△' : '□'}
+                                </div>
+                            ))}
+                        </div>
+
                         <div className="max-w-7xl mx-auto w-full relative z-10">
                             <div className="grid lg:grid-cols-2 gap-20 items-center">
                                 <div>
-                                    <div className="inline-block px-4 py-2 rounded-full glass-card mb-6">
+                                    <div className="inline-block px-4 py-2 rounded-full glass-card mb-6 hover:scale-105 transition-transform">
                                         <span className="text-sm font-semibold animated-gradient-text">CS Master's @ University of Rochester</span>
                                     </div>
                                     
@@ -1116,10 +1231,10 @@
                                     <p className="text-xl md:text-2xl mb-8 opacity-80 leading-relaxed">
                                         Turning complex algorithms into elegant solutions. Passionate about AI, distributed systems, and creating technology that matters.
                                     </p>
-                                    
+
                                     <div className="flex flex-wrap gap-4 mb-10">
-                                        <a href="#work" className="creative-button bg-gradient-to-r from-teal-600 to-cyan-600 text-white magnetic">
-                                            Explore My Work
+                                        <a href="#projects" className="creative-button bg-gradient-to-r from-teal-600 to-cyan-600 text-white magnetic">
+                                            Explore My Projects
                                         </a>
                                         <a href="#contact" className="creative-button btn-glass magnetic">
                                             Let's Connect
@@ -1147,7 +1262,25 @@
                                     </div>
                                 </div>
 
-                                <div className="flex justify-center">
+                                <div className="flex justify-center relative">
+                                    {/* NEW: Orbiting Icons */}
+                                    <div className="orbit-container">
+                                        {[
+                                            { icon: 'fa-python', delay: 0 },
+                                            { icon: 'fa-react', delay: 2 },
+                                            { icon: 'fa-node', delay: 4 },
+                                            { icon: 'fa-database', delay: 6 }
+                                        ].map((item, i) => (
+                                            <div
+                                                key={i}
+                                                className="orbit-icon glass-card"
+                                                style={{ animationDelay: `${item.delay}s` }}
+                                            >
+                                                <i className={`fab ${item.icon} text-xl animated-gradient-text`}></i>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    
                                     <div className="profile-container magnetic">
                                         <div className="profile-border">
                                             <div className="profile-inner">
@@ -1159,11 +1292,120 @@
                             </div>
                         </div>
                     </section>
+                    
+                    {/* UPDATED EXPERIENCE SECTION WITH DOTS */}
+                    <section id="experience" className="py-32 px-6">
+                        <div className="max-w-5xl mx-auto">
+                            <h2 className="section-title text-center reveal">
+                                My <span className="animated-gradient-text">Journey</span>
+                            </h2>
+                            
+                            <div className="space-y-12">
+                                {workExperience.map((job, index) => (
+                                    <div key={index} className="glass-card rounded-2xl reveal" style={{ animationDelay: `${index * 0.15}s` }}>
+                                        {/* TERMINAL-STYLE DOTS HEADER */}
+                                        <div className="project-card-header">
+                                            <div className="project-dot"></div>
+                                            <div className="project-dot"></div>
+                                            <div className="project-dot"></div>
+                                        </div>
+                                        
+                                        {/* CONTENT */}
+                                        <div className="p-8">
+                                            <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4">
+                                                <div>
+                                                    <h3 className="text-3xl font-bold mb-2">{job.role}</h3>
+                                                    <p className="text-xl animated-gradient-text font-semibold mb-2">{job.company}</p>
+                                                </div>
+                                                <span className="text-lg opacity-70 font-medium">{job.period}</span>
+                                            </div>
+                                            <p className="text-lg opacity-80 mb-4 leading-relaxed">{job.description}</p>
+                                            <div className="flex flex-wrap gap-2">
+                                                {job.technologies.map((tech, i) => (
+                                                    <span key={i} className="px-3 py-1 glass-card rounded-lg text-sm font-medium">
+                                                        {tech}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
 
-                    <section id="work" className="py-32 px-6 relative">
+                    {/* UPDATED EDUCATION SECTION WITH DOTS */}
+                    <section id="education" className="py-32 px-6">
+                        <div className="max-w-5xl mx-auto">
+                            <h2 className="section-title text-center reveal">
+                                My <span className="animated-gradient-text">Education</span>
+                            </h2>
+                            
+                            <div className="space-y-8">
+                                <div className="glass-card rounded-2xl reveal">
+                                    {/* TERMINAL-STYLE DOTS HEADER */}
+                                    <div className="project-card-header">
+                                        <div className="project-dot"></div>
+                                        <div className="project-dot"></div>
+                                        <div className="project-dot"></div>
+                                    </div>
+                                    
+                                    {/* CONTENT */}
+                                    <div className="p-8">
+                                        <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4">
+                                            <div>
+                                                <h3 className="text-3xl font-bold mb-2">Master of Science in Computer Science</h3>
+                                                <p className="text-xl animated-gradient-text font-semibold mb-2">University of Rochester</p>
+                                                <p className="text-base opacity-70">Rochester, NY</p>
+                                            </div>
+                                            <span className="text-lg opacity-70 font-medium mt-2 md:mt-0">Aug 2025 - Dec 2026</span>
+                                        </div>
+                                        <div className="flex items-center gap-2 mt-4">
+                                            <span className="px-3 py-1 glass-card rounded-lg text-sm font-medium">Deep learning</span>
+                                            <span className="px-3 py-1 glass-card rounded-lg text-sm font-medium">Data Mining</span>
+                                            <span className="px-3 py-1 glass-card rounded-lg text-sm font-medium">Computer Security and Architecture</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="glass-card rounded-2xl reveal" style={{ animationDelay: '0.15s' }}>
+                                    {/* TERMINAL-STYLE DOTS HEADER */}
+                                    <div className="project-card-header">
+                                        <div className="project-dot"></div>
+                                        <div className="project-dot"></div>
+                                        <div className="project-dot"></div>
+                                    </div>
+                                    
+                                    {/* CONTENT */}
+                                    <div className="p-8">
+                                        <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4">
+                                            <div>
+                                                <h3 className="text-3xl font-bold mb-2">Bachelor of Technology in Computer Science</h3>
+                                                <p className="text-xl animated-gradient-text font-semibold mb-2">Amrita School of Engineering</p>
+                                                <p className="text-base opacity-70">Coimbatore, India</p>
+                                            </div>
+                                            <span className="text-lg opacity-70 font-medium mt-2 md:mt-0">Oct 2020 - Jun 2024</span>
+                                        </div>
+                                        <p className="text-lg opacity-80 mb-4 leading-relaxed">
+                                            Graduated with comprehensive foundation in computer science, software engineering, and machine learning. 
+                                            Completed final year project on adaptive malware detection using evolutionary computation.
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            <span className="px-3 py-1 glass-card rounded-lg text-sm font-medium">Data Structures & Algorithms</span>
+                                            <span className="px-3 py-1 glass-card rounded-lg text-sm font-medium">Machine Learning</span>
+                                            <span className="px-3 py-1 glass-card rounded-lg text-sm font-medium">Software Engineering</span>
+                                            <span className="px-3 py-1 glass-card rounded-lg text-sm font-medium">Computer Networks</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section id="projects" className="py-32 px-6 relative">
                         <div className="max-w-7xl mx-auto">
                             <h2 className="section-title text-center reveal">
-                                Selected <span className="animated-gradient-text">Work</span>
+                                Selected <span className="animated-gradient-text">Projects</span>
                             </h2>
                             
                             <div className="grid md:grid-cols-2 gap-8">
@@ -1256,83 +1498,6 @@
                         </div>
                     </section>
 
-                    <section id="experience" className="py-32 px-6">
-                        <div className="max-w-5xl mx-auto">
-                            <h2 className="section-title text-center reveal">
-                                My <span className="animated-gradient-text">Journey</span>
-                            </h2>
-                            
-                            <div className="space-y-12">
-                                {workExperience.map((job, index) => (
-                                    <div key={index} className="glass-card p-8 rounded-2xl reveal" style={{ animationDelay: `${index * 0.15}s` }}>
-                                        <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-4">
-                                            <div>
-                                                <h3 className="text-3xl font-bold mb-2">{job.role}</h3>
-                                                <p className="text-xl animated-gradient-text font-semibold mb-2">{job.company}</p>
-                                            </div>
-                                            <span className="text-lg opacity-70 font-medium">{job.period}</span>
-                                        </div>
-                                        <p className="text-lg opacity-80 mb-4 leading-relaxed">{job.description}</p>
-                                        <div className="flex flex-wrap gap-2">
-                                            {job.technologies.map((tech, i) => (
-                                                <span key={i} className="px-3 py-1 glass-card rounded-lg text-sm font-medium">
-                                                    {tech}
-                                                </span>
-                                            ))}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
-
-                    <section id="certs" className="py-32 px-6">
-                        <div className="max-w-6xl mx-auto">
-                            <h2 className="section-title text-center reveal">
-                                <span className="animated-gradient-text">Certifications</span>
-                            </h2>
-                            
-                            <div className="grid md:grid-cols-2 gap-6">
-                                {certifications.map((cert, index) => (
-                                    <div key={index} className="cert-badge glass-card reveal" style={{ animationDelay: `${index * 0.1}s` }}>
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-600 to-cyan-600 flex items-center justify-center flex-shrink-0">
-                                                <i className={`fas ${cert.icon} text-2xl text-white`}></i>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-xl font-bold mb-1">{cert.name}</h3>
-                                                <p className="opacity-70">{cert.org}</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
-
-                    <section id="approach" className="py-32 px-6">
-                        <div className="max-w-4xl mx-auto">
-                            <h2 className="section-title text-center reveal">
-                                My <span className="animated-gradient-text">Approach</span>
-                            </h2>
-                            
-                            <div className="space-y-8">
-                                {[
-                                    { title: "Research & Ideation", desc: "Deep dive into the problem space, exploring existing solutions and identifying opportunities for innovation." },
-                                    { title: "Prototype & Iterate", desc: "Rapid prototyping with continuous feedback loops. Fail fast, learn faster, and refine relentlessly." },
-                                    { title: "Build & Scale", desc: "Production-grade implementation with focus on performance, reliability, and user experience." }
-                                ].map((step, index) => (
-                                    <div key={index} className="approach-step reveal" style={{ animationDelay: `${index * 0.15}s` }}>
-                                        <div className="approach-number">{index + 1}</div>
-                                        <div>
-                                            <h3 className="text-3xl font-bold mb-3">{step.title}</h3>
-                                            <p className="text-xl opacity-80 leading-relaxed">{step.desc}</p>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </section>
 
                     <section id="contact" className="py-32 px-6">
                         <div className="max-w-5xl mx-auto">
@@ -1388,10 +1553,9 @@
                                     <a href="mailto:tbalamur@ur.rochester.edu" className="creative-button bg-gradient-to-r from-teal-600 to-cyan-600 text-white text-center">
                                         <i className="fas fa-paper-plane mr-2"></i>Send a Message
                                     </a>
-                                    <a href="Tejaswini_BK_Resume.pdf" target="_blank" rel="noopener noreferrer" download="Tejaswini_BK_Resume.pdf" className="creative-button btn-glass text-center">
-                                        <i className="fas fa-download mr-2"></i>Download Resume
+                                    <a href="resume.html" className="creative-button btn-glass text-center">
+                                        <i className="fas fa-file-alt mr-2"></i>View Resume
                                     </a>
-
                                 </div>
                             </div>
                         </div>
@@ -1400,7 +1564,7 @@
                     <footer className="py-12 px-6 glass-card">
                         <div className="max-w-7xl mx-auto">
                             <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-                                <p className="opacity-70">© 2024 Tejaswini BK. Crafted with passion.</p>
+                                <p className="opacity-70">© 2025 Tejaswini BK. Crafted with passion.</p>
                                 <p className="text-sm animated-gradient-text font-semibold">Building the future, one line at a time.</p>
                             </div>
                         </div>
@@ -1453,13 +1617,9 @@
                                     </div>
 
                                     <div className="flex flex-wrap gap-4">
-                                        <a href="#" className="creative-button bg-gradient-to-r from-teal-600 to-cyan-600 text-white">
+                                        <a href={selectedProject.github} target="_blank" rel="noopener noreferrer" className="creative-button bg-gradient-to-r from-teal-600 to-cyan-600 text-white">
                                             <i className="fab fa-github mr-2"></i>
                                             View on GitHub
-                                        </a>
-                                        <a href="#" className="creative-button btn-glass">
-                                            <i className="fas fa-external-link-alt mr-2"></i>
-                                            Live Demo
                                         </a>
                                     </div>
                                 </div>
